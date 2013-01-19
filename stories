@@ -1,0 +1,6 @@
+1) Clean up iptables on host, instead of these hardcoded, use custom tables
+   a) sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+   b) iptables -A FORWARD -i v0-tenant-1 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+   c) iptables -t nat -A POSTROUTING -o eth2 -j MASQUERADE
+   d) iptables -t nat -A PREROUTING -p tcp --dport 10080 -i eth2 -j DNAT --to-destination 10.0.0.102:80
+2) CLONE_NEWUTS
