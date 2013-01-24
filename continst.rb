@@ -65,7 +65,8 @@ class ContainerInstance
     puts 'starting sshd'
     @sshd_pid = Process.fork {
       puts 'starting sshd instance'
-      `/usr/sbin/sshd`
+      `/usr/sbin/sshd -d -d -e &`
+      #`/usr/sbin/sshd &`
     }
 
   end
