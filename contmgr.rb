@@ -44,15 +44,7 @@ class ContainerManager
     `ifconfig #{@link_host_name} #{@host_ip} up`
     `route add -host #{@container_ip} dev #{@link_host_name}`
 
-    inst = ContainerInstance.new do |c|
-      c.host_ip = "10.0.0.101"
-      c.container_ip = "10.0.0.102"
-      c.tenant_id = 1
-      c.base = "/home/sai/platform/tenants"
-      c.command_port = 5555
-    end
-
-    @init_pid =  Syscall.new.start_container("/home/sai/.rvm/rubies/ruby-1.9.3-p327/bin/ruby ./inst1.rb")
+    @init_pid =  Syscall.new.start_container("/home/sai/.rvm/rubies/ruby-1.9.3-p327/bin/ruby ./continst.rb #{@tenant_id}")
 
     puts "Moving link to init with below command ..."
     puts "ip link set #{@link_cont_name} netns #{@init_pid}"
@@ -88,10 +80,11 @@ class ContainerManager
   end
 
   def send(cmd)
-    puts "opening socket.."
+    puts "opening socket to host #{@container_ip}:#{@command_port} .."
     client = TCPSocket.open(@container_ip, @command_port)
     puts "sending command..."
     client.send(cmd, 0)
+    puts "waiting for response ..."
     answer = client.gets(nil)
     puts answer
     client.close
@@ -104,22 +97,30 @@ class ContainerManager
 
 end
 
-container1 = ContainerManager.new do |c|
-  c.host_ip = "10.0.0.101"
-  c.container_ip = "10.0.0.102"
-  c.tenant_id = 1
-  c.base = "/home/sai/platform/tenants"
-  c.command_port = 5555
+def load_conf(tenant_id)
+  return Hash[*File.read("/home/sai/platform/tenants/#{tenant_id}/etc/container/container.conf").split(/[= \n]+/)]
 end
 
-if ARGV.length == 0
-  puts "Missing argument"
+
+if ARGV.length != 2
+  puts "Missing argument: usage ruby contmgr.rb tenant_id cmd"
   exit
 end
 
-cmd = ARGV[0]
+tenant_id = ARGV[0]
+cmd = ARGV[1]
 
-puts "Command: <#{cmd}>, my pid = #{Process.pid}"
+puts "Tenant: <#{tenant_id}> Command: <#{cmd}>, my pid = #{Process.pid}"
+
+cfg = load_conf(tenant_id)
+
+container1 = ContainerManager.new do |c|
+  c.host_ip = cfg['host_ip']
+  c.container_ip = cfg['container_ip']
+  c.tenant_id = tenant_id.to_i
+  c.base = "/home/sai/platform/tenants"
+  c.command_port = cfg['command_port'].to_i
+end
 
 if cmd == "start"
   container1.init
@@ -135,4 +136,14 @@ elsif cmd == "kill"
   container1.kill_init
 else
   container1.send(cmd)
+end
+
+__END__
+
+container1 = ContainerManager.new do |c|
+  c.host_ip = "10.0.0.101"
+  c.container_ip = "10.0.0.102"
+  c.tenant_id = 1
+  c.base = "/home/sai/platform/tenants"
+  c.command_port = 5555
 end

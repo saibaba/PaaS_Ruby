@@ -50,7 +50,7 @@ static void invoke(const char * command)
     const char *myProcessName = "init-runner for container 1";
     set_process_name(myProcessName);
     fprintf(stderr, "init-runner started... doing system...\n");
-    system(command); //"/home/sai/.rvm/rubies/ruby-1.9.3-p327/bin/ruby ./inst1.rb");
+    system(command);
 
   } else {
     wait_for_children(cpid, "init-runner" ); 

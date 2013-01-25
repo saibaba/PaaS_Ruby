@@ -10,6 +10,7 @@ class ContainerInstance
     puts "ContainerInstance, my pid = #{Process.pid}"
 
     @base = "/home/sai/platform/tenants"
+    @command_port = 5555
 
     yield self if block_given?
     @tenant_home = "#{@base}/#{@tenant_id}"
@@ -59,13 +60,13 @@ class ContainerInstance
     @listener_pid = Process.fork {
       $0 = "ruby continst-#{@tenant_id}:listener"
       require './listener'
-      listener_main
+      listener_main(@command_port)
     }
 
     puts 'starting sshd'
     @sshd_pid = Process.fork {
       puts 'starting sshd instance'
-      `/usr/sbin/sshd -d -d -e &`
+      `/usr/sbin/sshd &`
       #`/usr/sbin/sshd &`
     }
 
@@ -110,4 +111,32 @@ class ContainerInstance
     term
   end
 
+end
+
+def load_conf(tenant_id)
+  return Hash[*File.read("/home/sai/platform/tenants/#{tenant_id}/etc/container/container.conf").split(/[= \n]+/)]
+end
+
+def main(tenant_id)
+
+  puts "Instance: #{tenant_id}, PID of init from inside: #{Process.ppid}"
+
+  conf = load_conf(tenant_id)
+
+  inst = ContainerInstance.new do |c|
+    c.host_ip = conf['host_ip']
+    c.container_ip = conf['container_ip']
+    c.tenant_id = conf['tenant_id'].to_i
+    c.base = conf['base']
+    c.command_port = conf['command_port'].to_i
+  end
+
+  puts "Instance for tenant #{tenant_id} configured, running it.."
+
+  inst.run
+
+end
+
+if ARGV.length == 1
+  main(ARGV[0].to_i)
 end

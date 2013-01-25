@@ -4,10 +4,10 @@ trap('TERM') {
   puts "Listerner got request to shutdown!"
 }
 
-def listener_main
+def listener_main(command_port)
 
-  puts "Listener started..."
-  s = TCPServer.new('', 5555)
+  puts "Listener started... on port #{command_port}"
+  s = TCPServer.new('', command_port)
 
 
   done = false
@@ -16,7 +16,8 @@ def listener_main
 
     begin
       client = s.accept
-      Thread.new { run(client) }
+      Thread.new { puts "child thread:"; work(client) }
+      puts "launched a child thread..."
     rescue
       done = true
     end
@@ -27,13 +28,14 @@ def listener_main
 
 end
 
-def run(client)
+def work(client)
  
     begin
+      puts "Lstener waiting to recv..."
       data =  client.recv(124);
       data.chomp!
 
-      p "RECEIVED: #{data}"
+      puts "RECEIVED: #{data}"
 
       if (data == "SIGTERM")
         puts "My pid = #{Process.pid} and parent_pid = #{Process.ppid}"
@@ -73,4 +75,4 @@ def run(client)
     end
 end
 
-listener_main
+#listener_main
