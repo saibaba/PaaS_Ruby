@@ -137,13 +137,3 @@ elsif cmd == "kill"
 else
   container1.send(cmd)
 end
-
-__END__
-
-container1 = ContainerManager.new do |c|
-  c.host_ip = "10.0.0.101"
-  c.container_ip = "10.0.0.102"
-  c.tenant_id = 1
-  c.base = "/home/sai/platform/tenants"
-  c.command_port = 5555
-end
